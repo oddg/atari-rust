@@ -1,4 +1,7 @@
 #[allow(dead_code)]
+extern crate rand;
+
+use rand::Rng;
 
 pub struct Chip8 {
     memory: [u8; 4096],
@@ -46,7 +49,7 @@ impl Chip8 {
 
         let nnn = opcode & 0x0FFF;
         let nn = (opcode & 0x00FF) as u8;
-        let n = (opcode & 0x000F);
+        let n = (opcode & 0x000F) as u8;
         let x = (opcode & 0x0F00) >> 8;
         let y = (opcode & 0x00F0) >> 4;
 
@@ -117,18 +120,22 @@ impl Chip8 {
                 if self.v[x as usize] != self.v[y as usize] {
                     self.pc += 2
                 }
-            },
+            }
             0xA000 => self.i = nnn,
             0xB000 => self.pc = self.v[0] as u16 + nnn,
-            0xC000 => unimplemented!(), // self.v[x as usize] & random number [0..255]
-            0xD000 => self.draw(),
+            0xC000 => self.v[x as usize] = (rand::thread_rng().gen_range(0u16, 256) as u8) & nn,
+            0xD000 => self.draw(n),
             0xE000 => match nn {
-                0x9E => if self.key[self.v[x as usize] as usize] {
-                    self.pc += 2;
-                },
-                0xA1 => if !self.key[self.v[x as usize] as usize] {
-                    self.pc += 2;
-                },
+                0x9E => {
+                    if self.key[self.v[x as usize] as usize] {
+                        self.pc += 2;
+                    }
+                }
+                0xA1 => {
+                    if !self.key[self.v[x as usize] as usize] {
+                        self.pc += 2;
+                    }
+                }
                 _ => (),
             },
             0xF000 => match nn {
@@ -142,7 +149,7 @@ impl Chip8 {
                 0x55 => unimplemented!(),
                 0x65 => unimplemented!(),
                 _ => (),
-            }
+            },
             _ => panic!("Unexpected opcode: {:x}", opcode),
         }
     }
@@ -151,7 +158,7 @@ impl Chip8 {
         self.screen = [false; 64 * 32];
     }
 
-    fn draw(&self) {
+    fn draw(&self, n: u8) {
         unimplemented!()
     }
 
