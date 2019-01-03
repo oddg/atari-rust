@@ -1,5 +1,5 @@
 [package]
-name = "atari-emulator"
+name = "chip8"
 version = "0.1.0"
 authors = ["oddg <odegevigney@gmail.com>"]
 edition = "2018"
