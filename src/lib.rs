@@ -3,12 +3,57 @@ extern crate rand;
 
 use rand::Rng;
 
+const WIDTH: usize = 64;
+const HEIGHT: usize = 32;
+
+struct Screen([bool; WIDTH * HEIGHT]);
+
+impl Screen {
+    fn new() -> Self {
+        Screen([false; WIDTH * HEIGHT])
+    }
+
+    fn get(&self, x: usize, y: usize) -> bool {
+        self.0[x + y * WIDTH]
+    }
+
+    fn set(&mut self, x: usize, y: usize, v: bool) {
+        self.0[x + y * WIDTH] = v;
+    }
+
+    fn clear(&mut self) {
+        for x in 0..WIDTH {
+            for y in 0..HEIGHT {
+                self.set(x, y, false)
+            }
+        }
+    }
+
+    // Draw a sprite at coordinate (x,y). Returns whether a pixel has been erased.
+    fn draw(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
+        let mut flipped = false;
+        for (j, row) in sprite.iter().enumerate() {
+            for i in 0..8 {
+                let x = (x + i) % WIDTH;
+                let y = (y + j) % HEIGHT;
+                let new = ((row >> (7 - i)) & 1u8) == 1;
+                let old = self.get(x, y);
+                if new && old {
+                    flipped = true;
+                }
+                self.set(x, y, new ^ old);
+            }
+        }
+        flipped
+    }
+}
+
 pub struct Chip8 {
     memory: [u8; 4096],
     v: [u8; 16],
     i: u16,
     pc: u16,
-    screen: [bool; 64 * 32],
+    screen: Screen,
     delay_timer: u8,
     stack: [u16; 16],
     sp: u16,
@@ -22,7 +67,7 @@ impl Chip8 {
             v: [0; 16],
             i: 0,
             pc: 0,
-            screen: [false; 64 * 32],
+            screen: Screen::new(),
             delay_timer: 0,
             stack: [0; 16],
             sp: 0,
@@ -37,7 +82,7 @@ impl Chip8 {
     pub fn run(&mut self) {
         loop {
             self.emulate_cycle();
-            self.draw();
+            self.update_display();
             self.set_key();
         }
     }
@@ -55,7 +100,7 @@ impl Chip8 {
 
         match opcode & 0xF000 {
             0x0000 => match opcode & 0x0FFF {
-                0x00E0 => self.clear_screen(),
+                0x00E0 => self.screen.clear(),
                 0x00EE => {
                     self.sp -= 1;
                     self.pc = self.stack[self.sp as usize];
@@ -124,7 +169,16 @@ impl Chip8 {
             0xA000 => self.i = nnn,
             0xB000 => self.pc = self.v[0] as u16 + nnn,
             0xC000 => self.v[x as usize] = (rand::thread_rng().gen_range(0u16, 256) as u8) & nn,
-            0xD000 => self.draw(n),
+            0xD000 => {
+                let s = self.i as usize;
+                let e = s + (n as usize);
+                let flipped = self.screen.draw(
+                    self.v[x as usize] as usize,
+                    self.v[y as usize] as usize,
+                    &self.memory[s..e],
+                );
+                self.v[0xF] = if flipped { 1 } else { 0 };
+            }
             0xE000 => match nn {
                 0x9E => {
                     if self.key[self.v[x as usize] as usize] {
@@ -154,8 +208,8 @@ impl Chip8 {
         }
     }
 
-    fn clear_screen(&mut self) {
-        self.screen = [false; 64 * 32];
+    fn update_display(&self) {
+        unimplemented!()
     }
 
     fn draw(&self, n: u8) {
