@@ -9,7 +9,7 @@ pub struct Chip8 {
     delay_timer: u8,
     stack: [u16; 16],
     sp: u16,
-    key: [u8; 16],
+    key: [bool; 16],
 }
 
 impl Chip8 {
@@ -23,7 +23,7 @@ impl Chip8 {
             delay_timer: 0,
             stack: [0; 16],
             sp: 0,
-            key: [0; 16],
+            key: [false; 16],
         }
     }
 
@@ -76,7 +76,7 @@ impl Chip8 {
                 }
             }
             0x5000 => {
-                if self.v[x as usize] != self.v[y as usize] {
+                if self.v[x as usize] == self.v[y as usize] {
                     self.pc += 2
                 }
             }
@@ -113,7 +113,36 @@ impl Chip8 {
                 }
                 _ => (),
             },
-
+            0x9000 => {
+                if self.v[x as usize] != self.v[y as usize] {
+                    self.pc += 2
+                }
+            },
+            0xA000 => self.i = nnn,
+            0xB000 => self.pc = self.v[0] as u16 + nnn,
+            0xC000 => unimplemented!(), // self.v[x as usize] & random number [0..255]
+            0xD000 => self.draw(),
+            0xE000 => match nn {
+                0x9E => if self.key[self.v[x as usize] as usize] {
+                    self.pc += 2;
+                },
+                0xA1 => if !self.key[self.v[x as usize] as usize] {
+                    self.pc += 2;
+                },
+                _ => (),
+            },
+            0xF000 => match nn {
+                0x7 => self.v[x as usize] = self.delay_timer,
+                0xA => (), // v[x] = sound timer - unimplemented
+                0x15 => self.delay_timer = self.v[x as usize],
+                0x18 => (), // sound time = v[x] - unimplemented
+                0x1E => self.i += self.v[x as usize] as u16,
+                0x29 => unimplemented!(),
+                0x33 => unimplemented!(),
+                0x55 => unimplemented!(),
+                0x65 => unimplemented!(),
+                _ => (),
+            }
             _ => panic!("Unexpected opcode: {:x}", opcode),
         }
     }
