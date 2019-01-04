@@ -115,24 +115,29 @@ impl Chip8 {
         let mut event_pump = sdl_context.event_pump().unwrap();
 
         'running: loop {
-            self.decrement_timers();
             self.emulate_cycle();
-            self.update_display(&mut canvas);
+            if self.do_tick() {
+                self.delay_timer = if self.delay_timer > 0 { self.delay_timer - 1 } else { 0 };
+                self.update_display(&mut canvas);
+            }
             if self.set_key(&mut event_pump) {
                 break 'running;
             }
         }
     }
 
-    fn decrement_timers(&mut self) {
+    fn do_tick(&mut self) -> bool {
         let elapsed = self
             .sys_time
             .elapsed()
             .expect("System time went backwards!");
-        if self.delay_timer > 0 && elapsed >= SIXTY_HERTZ {
-            self.delay_timer -= 1;
+
+        let mut tick = false;
+        if elapsed >= SIXTY_HERTZ {
+            tick = true;
             self.sys_time = SystemTime::now();
         }
+        tick
     }
 
     fn emulate_cycle(&mut self) {
