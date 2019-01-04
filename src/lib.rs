@@ -5,6 +5,8 @@ use rand::Rng;
 use std::time::{Duration, SystemTime};
 use termion::cursor;
 
+mod font;
+
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
 
@@ -76,8 +78,10 @@ pub struct Chip8 {
 
 impl Chip8 {
     pub fn new() -> Self {
+        let mut memory = [0; 4096];
+        memory[0..font::FONT.len()].copy_from_slice(&font::FONT);
         Chip8 {
-            memory: [0; 4096],
+            memory,
             v: [0; 16],
             i: 0,
             pc: 0x200,
