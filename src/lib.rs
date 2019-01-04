@@ -1,12 +1,15 @@
 extern crate rand;
+extern crate sdl2;
 
 use rand::Rng;
+use sdl2::{pixels::Color, rect::Rect, render::WindowCanvas};
 use std::time::{Duration, SystemTime};
 
 mod font;
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
+const SCALE: u32 = 10;
 
 const SIXTY_HERTZ: Duration = Duration::from_millis(16u64);
 
@@ -97,10 +100,23 @@ impl Chip8 {
     }
 
     pub fn run(&mut self) {
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+        let window = video_subsystem
+            .window(
+                "chip80 gaming",
+                (WIDTH as u32) * SCALE,
+                (HEIGHT as u32) * SCALE,
+            )
+            .position_centered()
+            .build()
+            .unwrap();
+        let mut canvas = window.into_canvas().build().unwrap();
+
         loop {
             self.decrement_timers();
             self.emulate_cycle();
-            self.update_display();
+            self.update_display(&mut canvas);
             //self.set_key();
         }
     }
@@ -249,13 +265,24 @@ impl Chip8 {
         }
     }
 
-    fn update_display(&self) {
-        for j in 0..HEIGHT {
-            for i in 0..WIDTH {
-                print!("{}", to_unicode(self.screen.get(i, j)))
+    fn update_display(&self, canvas: &mut WindowCanvas) {
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+
+        for j in 0..(HEIGHT as i32) {
+            for i in 0..(WIDTH as i32) {
+                canvas
+                    .fill_rect(Rect::new(
+                        i * (SCALE as i32),
+                        j * (SCALE as i32),
+                        SCALE,
+                        SCALE,
+                    ))
+                    .unwrap();
             }
-            println!("");
         }
+        canvas.present();
     }
 
     fn set_key(&mut self) {
