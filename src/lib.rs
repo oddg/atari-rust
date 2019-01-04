@@ -3,9 +3,12 @@ extern crate termion;
 
 use rand::Rng;
 use termion::cursor;
+use std::time::{SystemTime, Duration};
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
+
+const SIXTY_HERTZ: Duration = Duration::from_millis(16u64);
 
 struct Screen([bool; WIDTH * HEIGHT]);
 
@@ -68,6 +71,7 @@ pub struct Chip8 {
     stack: [u16; 16],
     sp: u16,
     key: [bool; 16],
+    sys_time: SystemTime,
 }
 
 impl Chip8 {
@@ -82,6 +86,7 @@ impl Chip8 {
             stack: [0; 16],
             sp: 0,
             key: [false; 16],
+            sys_time: SystemTime::now(),
         }
     }
 
@@ -91,9 +96,18 @@ impl Chip8 {
 
     pub fn run(&mut self) {
         loop {
+            self.decrement_timers();
             self.emulate_cycle();
             self.update_display();
             //self.set_key();
+        }
+    }
+
+    fn decrement_timers(&mut self) {
+        let elapsed = self.sys_time.elapsed().expect("System time went backwards!");
+        if self.delay_timer > 0 && elapsed >= SIXTY_HERTZ {
+            self.delay_timer -= 1;
+            self.sys_time = SystemTime::now();
         }
     }
 
