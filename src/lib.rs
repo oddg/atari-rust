@@ -2,7 +2,7 @@ extern crate rand;
 extern crate sdl2;
 
 use rand::Rng;
-use sdl2::{pixels::Color, rect::Rect, render::WindowCanvas};
+use sdl2::{event::Event, keyboard::Keycode, pixels::Color, rect::Rect, render::WindowCanvas};
 use std::time::{Duration, SystemTime};
 
 mod font;
@@ -55,15 +55,6 @@ impl Screen {
     }
 }
 
-#[inline]
-fn to_unicode(b: bool) -> &'static str {
-    if b {
-        "\u{2588}"
-    } else {
-        " "
-    }
-}
-
 pub struct Chip8 {
     memory: [u8; 4096],
     v: [u8; 16],
@@ -112,12 +103,24 @@ impl Chip8 {
             .build()
             .unwrap();
         let mut canvas = window.into_canvas().build().unwrap();
+        canvas.present();
+        let mut event_pump = sdl_context.event_pump().unwrap();
 
-        loop {
+        'running: loop {
             self.decrement_timers();
             self.emulate_cycle();
             self.update_display(&mut canvas);
             //self.set_key();
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit { .. }
+                    | Event::KeyDown {
+                        keycode: Some(Keycode::Escape),
+                        ..
+                    } => break 'running,
+                    _ => {}
+                }
+            }
         }
     }
 
