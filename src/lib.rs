@@ -2,7 +2,9 @@ extern crate rand;
 extern crate sdl2;
 
 use rand::Rng;
-use sdl2::{event::Event, keyboard::Keycode, pixels::Color, rect::Rect, render::WindowCanvas};
+use sdl2::{
+    event::Event, keyboard::Keycode, pixels::Color, rect::Rect, render::WindowCanvas, EventPump,
+};
 use std::time::{Duration, SystemTime};
 
 mod font;
@@ -110,16 +112,8 @@ impl Chip8 {
             self.decrement_timers();
             self.emulate_cycle();
             self.update_display(&mut canvas);
-            //self.set_key();
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => break 'running,
-                    _ => {}
-                }
+            if self.set_key(&mut event_pump) {
+                break 'running;
             }
         }
     }
@@ -290,7 +284,50 @@ impl Chip8 {
         canvas.present();
     }
 
-    fn set_key(&mut self) {
-        unimplemented!()
+    fn set_key(&mut self, event_pump: &mut EventPump) -> bool {
+        let mut quit = false;
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => quit = true,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => self.key[4] = true,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => self.key[4] = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => self.key[5] = true,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => self.key[5] = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => self.key[6] = true,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => self.key[6] = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => self.key[0] = true,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => self.key[0] = false,
+                _ => {}
+            }
+        }
+        quit
     }
 }
