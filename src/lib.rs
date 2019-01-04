@@ -2,6 +2,7 @@ extern crate rand;
 extern crate termion;
 
 use rand::Rng;
+use termion::cursor;
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
@@ -48,6 +49,15 @@ impl Screen {
     }
 }
 
+#[inline]
+fn to_unicode(b: bool) -> &'static str {
+    if b {
+        "\u{2588}"
+    } else {
+        " "
+    }
+}
+
 pub struct Chip8 {
     memory: [u8; 4096],
     v: [u8; 16],
@@ -82,7 +92,7 @@ impl Chip8 {
     pub fn run(&mut self) {
         loop {
             self.emulate_cycle();
-            //self.update_display();
+            self.update_display();
             //self.set_key();
         }
     }
@@ -221,7 +231,13 @@ impl Chip8 {
     }
 
     fn update_display(&self) {
-        unimplemented!()
+        cursor::Goto(1, 1);
+        for i in 0..WIDTH {
+            for j in 0..HEIGHT {
+                print!("{}", to_unicode(self.screen.get(i, j)))
+            }
+            println!("");
+        }
     }
 
     fn set_key(&mut self) {
