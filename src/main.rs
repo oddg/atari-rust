@@ -7,8 +7,6 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path;
 
-use std::time::{SystemTime, Duration};
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     let game = &args[1];

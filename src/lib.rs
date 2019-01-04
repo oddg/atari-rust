@@ -1,9 +1,7 @@
 extern crate rand;
-extern crate termion;
 
 use rand::Rng;
 use std::time::{Duration, SystemTime};
-use termion::cursor;
 
 mod font;
 
@@ -99,7 +97,6 @@ impl Chip8 {
     }
 
     pub fn run(&mut self) {
-        print!("{}", cursor::Hide);
         loop {
             self.decrement_timers();
             self.emulate_cycle();
@@ -253,7 +250,6 @@ impl Chip8 {
     }
 
     fn update_display(&self) {
-        print!("{}", cursor::Goto(1, 1));
         for j in 0..HEIGHT {
             for i in 0..WIDTH {
                 print!("{}", to_unicode(self.screen.get(i, j)))
