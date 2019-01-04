@@ -2,8 +2,8 @@ extern crate rand;
 extern crate termion;
 
 use rand::Rng;
+use std::time::{Duration, SystemTime};
 use termion::cursor;
-use std::time::{SystemTime, Duration};
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
@@ -95,6 +95,7 @@ impl Chip8 {
     }
 
     pub fn run(&mut self) {
+        print!("{}", cursor::Hide);
         loop {
             self.decrement_timers();
             self.emulate_cycle();
@@ -104,7 +105,10 @@ impl Chip8 {
     }
 
     fn decrement_timers(&mut self) {
-        let elapsed = self.sys_time.elapsed().expect("System time went backwards!");
+        let elapsed = self
+            .sys_time
+            .elapsed()
+            .expect("System time went backwards!");
         if self.delay_timer > 0 && elapsed >= SIXTY_HERTZ {
             self.delay_timer -= 1;
             self.sys_time = SystemTime::now();
@@ -154,7 +158,7 @@ impl Chip8 {
                 }
             }
             0x6000 => self.v[x as usize] = nn,
-            0x7000 => self.v[x as usize] += nn,
+            0x7000 => self.v[x as usize] = u8::wrapping_add(self.v[x as usize], nn),
             0x8000 => match n {
                 0 => self.v[x as usize] = self.v[y as usize],
                 1 => self.v[x as usize] |= self.v[y as usize],
@@ -245,9 +249,9 @@ impl Chip8 {
     }
 
     fn update_display(&self) {
-        cursor::Goto(1, 1);
-        for i in 0..WIDTH {
-            for j in 0..HEIGHT {
+        print!("{}", cursor::Goto(1, 1));
+        for j in 0..HEIGHT {
+            for i in 0..WIDTH {
                 print!("{}", to_unicode(self.screen.get(i, j)))
             }
             println!("");
