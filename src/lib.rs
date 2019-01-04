@@ -275,14 +275,16 @@ impl Chip8 {
 
         for j in 0..(HEIGHT as i32) {
             for i in 0..(WIDTH as i32) {
-                canvas
-                    .fill_rect(Rect::new(
-                        i * (SCALE as i32),
-                        j * (SCALE as i32),
-                        SCALE,
-                        SCALE,
-                    ))
-                    .unwrap();
+                if self.screen.get(i as usize, j as usize) {
+                    canvas
+                        .fill_rect(Rect::new(
+                            i * (SCALE as i32),
+                            j * (SCALE as i32),
+                            SCALE,
+                            SCALE,
+                        ))
+                        .unwrap();
+                }
             }
         }
         canvas.present();
