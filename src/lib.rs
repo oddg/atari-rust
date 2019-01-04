@@ -66,9 +66,9 @@ impl Chip8 {
             memory: [0; 4096],
             v: [0; 16],
             i: 0,
-            pc: 0,
+            pc: 0x200,
             screen: Screen::new(),
-            delay_timer: 0,
+            delay_timer: 60,
             stack: [0; 16],
             sp: 0,
             key: [false; 16],
@@ -76,20 +76,22 @@ impl Chip8 {
     }
 
     pub fn load_game(&mut self, game: &[u8]) {
-        unimplemented!()
+        self.memory[0x200..(0x200 + game.len())]
+            .copy_from_slice(game);
     }
 
     pub fn run(&mut self) {
         loop {
             self.emulate_cycle();
-            self.update_display();
-            self.set_key();
+            //self.update_display();
+            //self.set_key();
         }
     }
 
     fn emulate_cycle(&mut self) {
-        let opcode = u16::from(self.memory[self.pc as usize] << 8)
+        let opcode = (u16::from(self.memory[self.pc as usize]) << 8)
             + u16::from(self.memory[(self.pc + 1) as usize]);
+
         self.pc += 2;
 
         let nnn = opcode & 0x0FFF;
@@ -104,7 +106,7 @@ impl Chip8 {
                 0x00EE => {
                     self.sp -= 1;
                     self.pc = self.stack[self.sp as usize];
-                }
+                },
                 _ => panic!("Unexpected opcode: {:x}", opcode),
             },
             0x1000 => self.pc = nnn,
@@ -156,7 +158,7 @@ impl Chip8 {
                     self.v[0xF as usize] = if f { 0 } else { 1 };
                 }
                 0xE => {
-                    self.v[0xF as usize] = self.v[x as usize] & 0xA0;
+                    self.v[0xF as usize] = self.v[x as usize] & 0x80;
                     self.v[x as usize] <<= 1;
                 }
                 _ => (),
@@ -197,11 +199,21 @@ impl Chip8 {
                 0xA => (), // v[x] = sound timer - unimplemented
                 0x15 => self.delay_timer = self.v[x as usize],
                 0x18 => (), // sound time = v[x] - unimplemented
-                0x1E => self.i += self.v[x as usize] as u16,
-                0x29 => unimplemented!(),
-                0x33 => unimplemented!(),
-                0x55 => unimplemented!(),
-                0x65 => unimplemented!(),
+                0x1E => {
+                    self.i += self.v[x as usize] as u16;
+                    self.v[0xF] = if self.i > 0xFFF { 1 } else { 0 };
+                }
+                0x29 => self.i = self.v[x as usize] as u16 * 5,
+                0x33 => {
+                    self.memory[self.i as usize] = self.v[x as usize] / 100;
+                    self.memory[self.i as usize + 1] = (self.v[x as usize] / 10) % 10;
+                    self.memory[self.i as usize + 2] = (self.v[x as usize] % 100) % 10;
+                },
+                0x55 => self.memory[(self.i as usize)..(self.i + x as u16 + 1) as usize]
+                    .copy_from_slice(&self.v[0..(x as usize + 1)]),
+                0x65 => self.v[0..(x as usize + 1)]
+                    .copy_from_slice(&self.memory[(self.i as usize)..(self.i + x as u16 + 1) as usize]),
+                0xFF => println!("{:?}", self.v[x as usize]), // println value of register X for debugging
                 _ => (),
             },
             _ => panic!("Unexpected opcode: {:x}", opcode),
