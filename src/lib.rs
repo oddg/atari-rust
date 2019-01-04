@@ -1,3 +1,6 @@
+extern crate lazy_static;
+#[macro_use]
+extern crate maplit;
 extern crate rand;
 extern crate sdl2;
 
@@ -5,7 +8,10 @@ use rand::Rng;
 use sdl2::{
     event::Event, keyboard::Keycode, pixels::Color, rect::Rect, render::WindowCanvas, EventPump,
 };
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime},
+};
 
 mod font;
 
@@ -294,40 +300,43 @@ impl Chip8 {
                     ..
                 } => quit = true,
                 Event::KeyDown {
-                    keycode: Some(Keycode::Space),
-                    ..
-                } => self.key[4] = true,
+                    keycode: Some(key), ..
+                } => {
+                    if let Some(mapped) = KEY_BINDINGS.get(&key) {
+                        self.key[*mapped] = true;
+                    }
+                }
                 Event::KeyUp {
-                    keycode: Some(Keycode::Space),
-                    ..
-                } => self.key[4] = false,
-                Event::KeyDown {
-                    keycode: Some(Keycode::Left),
-                    ..
-                } => self.key[5] = true,
-                Event::KeyUp {
-                    keycode: Some(Keycode::Left),
-                    ..
-                } => self.key[5] = false,
-                Event::KeyDown {
-                    keycode: Some(Keycode::Right),
-                    ..
-                } => self.key[6] = true,
-                Event::KeyUp {
-                    keycode: Some(Keycode::Right),
-                    ..
-                } => self.key[6] = false,
-                Event::KeyDown {
-                    keycode: Some(Keycode::Down),
-                    ..
-                } => self.key[0] = true,
-                Event::KeyUp {
-                    keycode: Some(Keycode::Down),
-                    ..
-                } => self.key[0] = false,
+                    keycode: Some(key), ..
+                } => {
+                    if let Some(mapped) = KEY_BINDINGS.get(&key) {
+                        self.key[*mapped] = false;
+                    }
+                }
                 _ => {}
             }
         }
         quit
     }
+}
+
+lazy_static::lazy_static! {
+    static ref KEY_BINDINGS: HashMap<Keycode, usize> = maplit::hashmap! {
+        Keycode::Num1 => 0,
+        Keycode::Num2 => 1,
+        Keycode::Num3 => 2,
+        Keycode::Num4 => 3,
+        Keycode::Q => 4,
+        Keycode::W => 5,
+        Keycode::E => 6,
+        Keycode::R => 7,
+        Keycode::A => 8,
+        Keycode::S => 9,
+        Keycode::D => 10,
+        Keycode::F => 11,
+        Keycode::Z => 12,
+        Keycode::X => 13,
+        Keycode::C => 14,
+        Keycode::V => 15,
+    };
 }
