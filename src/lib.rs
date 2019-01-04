@@ -1,5 +1,5 @@
-#[allow(dead_code)]
 extern crate rand;
+extern crate termion;
 
 use rand::Rng;
 
@@ -76,8 +76,7 @@ impl Chip8 {
     }
 
     pub fn load_game(&mut self, game: &[u8]) {
-        self.memory[0x200..(0x200 + game.len())]
-            .copy_from_slice(game);
+        self.memory[0x200..(0x200 + game.len())].copy_from_slice(game);
     }
 
     pub fn run(&mut self) {
@@ -106,7 +105,7 @@ impl Chip8 {
                 0x00EE => {
                     self.sp -= 1;
                     self.pc = self.stack[self.sp as usize];
-                },
+                }
                 _ => panic!("Unexpected opcode: {:x}", opcode),
             },
             0x1000 => self.pc = nnn,
@@ -208,11 +207,12 @@ impl Chip8 {
                     self.memory[self.i as usize] = self.v[x as usize] / 100;
                     self.memory[self.i as usize + 1] = (self.v[x as usize] / 10) % 10;
                     self.memory[self.i as usize + 2] = (self.v[x as usize] % 100) % 10;
-                },
+                }
                 0x55 => self.memory[(self.i as usize)..(self.i + x as u16 + 1) as usize]
                     .copy_from_slice(&self.v[0..(x as usize + 1)]),
-                0x65 => self.v[0..(x as usize + 1)]
-                    .copy_from_slice(&self.memory[(self.i as usize)..(self.i + x as u16 + 1) as usize]),
+                0x65 => self.v[0..(x as usize + 1)].copy_from_slice(
+                    &self.memory[(self.i as usize)..(self.i + x as u16 + 1) as usize],
+                ),
                 0xFF => println!("{:?}", self.v[x as usize]), // println value of register X for debugging
                 _ => (),
             },
@@ -221,10 +221,6 @@ impl Chip8 {
     }
 
     fn update_display(&self) {
-        unimplemented!()
-    }
-
-    fn draw(&self, n: u8) {
         unimplemented!()
     }
 
